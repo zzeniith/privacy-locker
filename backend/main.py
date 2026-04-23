@@ -10,8 +10,8 @@ app.add_middleware(
     allow_origins=[
         "https://privacy-locker-tau.vercel.app",
         "https://privacy-locker-git-main-shriyan2319-7690s-projects.vercel.app",
-        "https://.*\.vercel\.app",
-        "https://privacy-locker-gexs623id-shriyan2319-7690s-projects.vercel.app"
+        "https://privacy-locker-gexs623id-shriyan2319-7690s-projects.vercel.app",
+        "https://privacy-locker-1ur3ntsoi-shriyan2319-7690s-projects.vercel.app",  
     ],
     allow_credentials=True,
     allow_methods=["*"],
