@@ -3,10 +3,10 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from datetime import datetime
 import os
+import uuid
 
-from db import get_db, User  # Add if you need user lookup
+from db import get_db
 from auth import get_current_user
-from utils.encryption import encrypt_file, decrypt_file
 from config import UPLOAD_DIR
 
 router = APIRouter(prefix="/files", tags=["files"])
@@ -18,18 +18,11 @@ def upload_file(
     db: Session = Depends(get_db)
 ):
     contents = file.file.read()
-    encrypted = encrypt_file(contents)
-    
-    # Generate unique ID
-    import uuid
     file_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, file_id)
     
     with open(file_path, "wb") as f:
-        f.write(encrypted)
-    
-    # Store metadata in SQLite if needed
-    # Or keep in memory/dict for now
+        f.write(contents)
     
     return {"message": "File uploaded successfully", "file_id": file_id}
 
@@ -38,7 +31,6 @@ def list_files(
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # List files from upload directory
     files = []
     if os.path.exists(UPLOAD_DIR):
         for filename in os.listdir(UPLOAD_DIR):
@@ -46,6 +38,7 @@ def list_files(
             stat = os.stat(file_path)
             files.append({
                 "file_id": filename,
+                "name": filename,
                 "size": stat.st_size,
                 "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat()
             })
@@ -61,12 +54,10 @@ def download_file(
         raise HTTPException(status_code=404, detail="File not found")
     
     with open(file_path, "rb") as f:
-        encrypted = f.read()
-    
-    decrypted = decrypt_file(encrypted)
+        contents = f.read()
     
     return Response(
-        content=decrypted,
+        content=contents,
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={file_id}"}
     )

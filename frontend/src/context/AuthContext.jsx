@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState({ email: "demo@user.com" })
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
