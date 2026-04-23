@@ -16,7 +16,7 @@ db = client[DB_NAME]
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    
+    current_user: str = Depends(get_current_user)
 ):
     contents = await file.read()
     encrypted = encrypt_file(contents)
@@ -39,7 +39,7 @@ async def upload_file(
     return {"message": "File uploaded successfully", "file_id": file_id}
 
 @router.get("/list")
-async def list_files(current_user: str = "demo_user"):
+async def list_files(current_user: str = Depends(get_current_user)):
     cursor = db.files.find({"owner": current_user})
     files = []
     async for doc in cursor:
@@ -52,7 +52,7 @@ async def list_files(current_user: str = "demo_user"):
     return files
 
 @router.get("/download/{file_id}")
-async def download_file(file_id: str, current_user: str = "demo_user"):
+async def download_file(file_id: str, current_user: str = Depends(get_current_user)):
     doc = await db.files.find_one({"_id": ObjectId(file_id), "owner": current_user})
     if not doc:
         raise HTTPException(status_code=404, detail="File not found")
@@ -69,7 +69,7 @@ async def download_file(file_id: str, current_user: str = "demo_user"):
     )
 
 @router.delete("/{file_id}")
-async def delete_file(file_id: str, current_user: str = "demo_user"):
+async def delete_file(file_id: str, current_user: str = Depends(get_current_user)):
     doc = await db.files.find_one({"_id": ObjectId(file_id), "owner": current_user})
     if not doc:
         raise HTTPException(status_code=404, detail="File not found")
