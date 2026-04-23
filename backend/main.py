@@ -8,11 +8,13 @@ app = FastAPI(title="Privacy Locker API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://privacy-locker-tau.vercel.app",
-        "https://privacy-locker-git-main-shriyan2319-7690s-projects.vercel.app",
-        "https://privacy-locker-gexs623id-shriyan2319-7690s-projects.vercel.app",
-        "https://privacy-locker-1ur3ntsoi-shriyan2319-7690s-projects.vercel.app",  
-    ],
+    "https://privacy-locker-tau.vercel.app",
+    "https://privacy-locker-git-main-shriyan2319-7690s-projects.vercel.app",
+    "https://privacy-locker-gexs623id-shriyan3id-shriyan2319-7690s-projects.vercel.app",
+    "https://privacy-locker-1ur3ntsoi-shriyan2319-7690s-projects.vercel.app",
+    "https://privacy-locker-94q7xz3au-shriyan2319-7690s-projects.vercel.app",
+    "https://.*\.vercel\.app",  
+],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
