@@ -6,18 +6,21 @@ from routes.file_routes import router as file_router
 
 app = FastAPI(title="Privacy Locker API")
 
-
-CORS_ALLOWED = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
-
+# CORS for localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ALLOWED,
+    allow_origins=[
+        "http://localhost:5173",   # Vite default
+        "http://localhost:3000",   # React default
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)   
+app.include_router(auth_router)
 app.include_router(file_router)
 
 @app.get("/")

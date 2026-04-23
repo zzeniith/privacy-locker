@@ -1,14 +1,18 @@
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = os.getenv("DB_NAME", "privacy_locker")
-SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
-ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY").encode()
+# SQLite
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./privacy_locker.db")
 
-UPLOAD_DIR = "uploads"
+# Upload directory
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+
+# JWT
+SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+# Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)

@@ -1,79 +1,72 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import Response
-from motor.motor_asyncio import AsyncIOMotorClient
-from bson import ObjectId
+from sqlalchemy.orm import Session
 from datetime import datetime
 import os
 
-from config import MONGO_URL, DB_NAME, UPLOAD_DIR
+from db import get_db, User  # Add if you need user lookup
 from auth import get_current_user
 from utils.encryption import encrypt_file, decrypt_file
+from config import UPLOAD_DIR
 
 router = APIRouter(prefix="/files", tags=["files"])
-client = AsyncIOMotorClient(MONGO_URL)
-db = client[DB_NAME]
 
 @router.post("/upload")
-async def upload_file(
+def upload_file(
     file: UploadFile = File(...),
-    current_user: str = Depends(get_current_user)
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
-    contents = await file.read()
+    contents = file.file.read()
     encrypted = encrypt_file(contents)
-
-    file_id = str(ObjectId())
+    
+    # Generate unique ID
+    import uuid
+    file_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, file_id)
-
+    
     with open(file_path, "wb") as f:
         f.write(encrypted)
-
-    await db.files.insert_one({
-        "_id": ObjectId(file_id),
-        "original_name": file.filename,
-        "size": len(contents),
-        "uploaded_at": datetime.utcnow().isoformat(),
-        "owner": current_user,
-        "file_path": file_path
-    })
-
+    
+    # Store metadata in SQLite if needed
+    # Or keep in memory/dict for now
+    
     return {"message": "File uploaded successfully", "file_id": file_id}
 
 @router.get("/list")
-async def list_files(current_user: str = Depends(get_current_user)):
-    cursor = db.files.find({"owner": current_user})
+def list_files(
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # List files from upload directory
     files = []
-    async for doc in cursor:
-        files.append({
-            "id": str(doc["_id"]),
-            "filename": doc["original_name"],
-            "size": doc["size"],
-            "uploaded_at": doc["uploaded_at"]
-        })
+    if os.path.exists(UPLOAD_DIR):
+        for filename in os.listdir(UPLOAD_DIR):
+            file_path = os.path.join(UPLOAD_DIR, filename)
+            stat = os.stat(file_path)
+            files.append({
+                "file_id": filename,
+                "size": stat.st_size,
+                "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat()
+            })
     return files
 
 @router.get("/download/{file_id}")
-async def download_file(file_id: str, current_user: str = Depends(get_current_user)):
-    doc = await db.files.find_one({"_id": ObjectId(file_id), "owner": current_user})
-    if not doc:
+def download_file(
+    file_id: str,
+    current_user: str = Depends(get_current_user)
+):
+    file_path = os.path.join(UPLOAD_DIR, file_id)
+    if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
-
-    with open(doc["file_path"], "rb") as f:
-        encrypted_data = f.read()
-
-    decrypted = decrypt_file(encrypted_data)
-
+    
+    with open(file_path, "rb") as f:
+        encrypted = f.read()
+    
+    decrypted = decrypt_file(encrypted)
+    
     return Response(
         content=decrypted,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{doc["original_name"]}"'}
+        headers={"Content-Disposition": f"attachment; filename={file_id}"}
     )
-
-@router.delete("/{file_id}")
-async def delete_file(file_id: str, current_user: str = Depends(get_current_user)):
-    doc = await db.files.find_one({"_id": ObjectId(file_id), "owner": current_user})
-    if not doc:
-        raise HTTPException(status_code=404, detail="File not found")
-
-    os.remove(doc["file_path"])
-    await db.files.delete_one({"_id": ObjectId(file_id)})
-    return {"message": "File deleted successfully"}
