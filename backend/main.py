@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI
-from fastAPI.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from routes.auth_routes import router as auth_router
 from routes.file_routes import router as file_router
 
